@@ -1,18 +1,19 @@
 package com.blazesmp.command;
 
 import com.blazesmp.anticheat.AntiCheatService;
-import com.blazesmp.anticheat.Suspect;
+import com.blazesmp.gui.SusListGUI;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-
-import java.util.Map;
+import org.bukkit.entity.Player;
 
 public final class SusListCommand implements CommandExecutor {
     private final AntiCheatService antiCheat;
+    private final SusListGUI gui;
 
-    public SusListCommand(AntiCheatService antiCheat) {
+    public SusListCommand(AntiCheatService antiCheat, SusListGUI gui) {
         this.antiCheat = antiCheat;
+        this.gui = gui;
     }
 
     @Override
@@ -21,20 +22,12 @@ public final class SusListCommand implements CommandExecutor {
             sender.sendMessage("§cNo permission.");
             return true;
         }
-
-        Map<?, Suspect> suspects = antiCheat.getSuspects();
-        if (suspects.isEmpty()) {
-            sender.sendMessage("§a§lSUSLIST §8» §7No players are currently flagged.");
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cThis command must be used in-game.");
             return true;
         }
-
-        sender.sendMessage("§c§lSUSLIST §8» §7Flagged players: §f" + suspects.size());
-        for (Suspect suspect : suspects.values()) {
-            sender.sendMessage("§c• §f" + suspect.getPlayerName() + " §8| §cScore: §f" + suspect.getScore());
-            for (Map.Entry<String, Integer> reason : suspect.getReasons().entrySet()) {
-                sender.sendMessage("  §8- §7" + reason.getKey() + " §8(x" + reason.getValue() + ")");
-            }
-        }
+        antiCheat.cleanupExpired();
+        gui.open(player);
         return true;
     }
 }
