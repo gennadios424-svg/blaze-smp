@@ -10,17 +10,20 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public final class AntiCheatService implements Listener {
     private static final long FIVE_HOURS = 5L * 60L * 60L * 1000L;
+    private static final long TWENTY_FOUR_HOURS = 24L * 60L * 60L * 1000L;
     private static final long CLICK_WINDOW = 1000L;
     private final JavaPlugin plugin;
     private final Map<UUID, Suspect> suspects = new LinkedHashMap<>();
@@ -31,6 +34,7 @@ public final class AntiCheatService implements Listener {
 
     public AntiCheatService(JavaPlugin plugin) {
         this.plugin = plugin;
+        plugin.getServer().getScheduler().runTaskTimer(plugin, this::cleanupExpired, 1200L, 1200L);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -39,7 +43,6 @@ public final class AntiCheatService implements Listener {
         Location from = event.getFrom();
         Location to = event.getTo();
         if (to == null) return;
-
         boolean positionMoved = from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
         boolean headMoved = from.getYaw() != to.getYaw() || from.getPitch() != to.getPitch();
         if (positionMoved) {
@@ -53,12 +56,13 @@ public final class AntiCheatService implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onClick(PlayerInteractEvent event) {
+        if (event.getHand() != EquipmentSlot.HAND) return;
         Player p = event.getPlayer();
         Deque<Long> q = clicks.computeIfAbsent(p.getUniqueId(), k -> new ArrayDeque<>());
         q.addLast(System.currentTimeMillis());
         trim(q, CLICK_WINDOW);
         if (q.size() >= 40) {
-            flag(p, "AutoClicker (40+ clicks/sec)", 5);
+            flag(p, "AutoClicker pattern (40+ interactions/sec)", 5);
             q.clear();
         }
         checkMacro(p);
@@ -76,7 +80,7 @@ public final class AntiCheatService implements Listener {
         if (type == Material.DIAMOND_ORE || type == Material.DEEPSLATE_DIAMOND_ORE) {
             int count = consecutiveDiamonds.merge(p.getUniqueId(), 1, Integer::sum);
             if (count >= 15) {
-                flag(p, "15+ consecutive diamond ores mined (possible X-Ray)", 6);
+                flag(p, "15+ consecutive diamond ores (possible X-Ray)", 6);
                 consecutiveDiamonds.put(p.getUniqueId(), 0);
             }
         } else {
@@ -122,7 +126,17 @@ public final class AntiCheatService implements Listener {
         plugin.getLogger().warning("Anti-cheat flag: " + p.getName() + " -> " + reason + " (score " + suspect.getScore() + ")");
     }
 
+    public void cleanupExpired() {
+        long cutoff = System.currentTimeMillis() - TWENTY_FOUR_HOURS;
+        Iterator<Map.Entry<UUID, Suspect>> it = suspects.entrySet().iterator();
+        while (it.hasNext()) {
+            Suspect suspect = it.next().getValue();
+            if (suspect.getLastFlag() > 0 && suspect.getLastFlag() < cutoff) it.remove();
+        }
+    }
+
     public Map<UUID, Suspect> getSuspects() {
+        cleanupExpired();
         return suspects;
     }
 
