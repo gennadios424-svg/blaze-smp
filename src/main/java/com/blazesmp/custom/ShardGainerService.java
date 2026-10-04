@@ -69,7 +69,11 @@ public final class ShardGainerService {
         return item.getItemMeta().getPersistentDataContainer().getOrDefault(counterKey, PersistentDataType.INTEGER, 0);
     }
 
-    public int getRequiredBlocks() {\n        return Math.max(1, plugin.getConfig().getInt("shardgainer.blocks-per-roll", 64));\n    }\n\n    public boolean rollReward() {
+    public int getRequiredBlocks() {
+        return Math.max(1, plugin.getConfig().getInt("shardgainer.blocks-per-roll", 64));
+    }
+
+    public boolean rollReward() {
         double chance = plugin.getConfig().getDouble("shardgainer.reward-chance", 25.0);
         return random.nextDouble() < Math.max(0.0, Math.min(100.0, chance)) / 100.0;
     }
