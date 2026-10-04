@@ -36,7 +36,7 @@ public final class ShardGainerService {
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         pdc.set(idKey, PersistentDataType.STRING, "BLAZE_SHARDGAINER");
         pdc.set(counterKey, PersistentDataType.INTEGER, 0);
-        meta.setLore(java.util.List.of("§7Every 64 blocks: chance for 1–5 Emerald Shards", "§8Progress is stored on this item"));
+        meta.setLore(java.util.List.of("§7Every 64 blocks: chance for 1–5 Blaze Shards", "§8Progress is stored on this item"));
         item.setItemMeta(meta);
         return item;
     }
