@@ -13,5 +13,14 @@ worth:
     sell: 250000
   DRAGON_EGG:
     sell: 2000000
+  CHEST:
+    sell: 25
+  CHEST_BOAT:
+    sell: 50
+  TRAPPED_CHEST:
+    sell: 75
+  CHEST_MINECART:
+    sell: 250
+
 money:
   starting-balance: 0
