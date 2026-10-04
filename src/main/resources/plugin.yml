@@ -1,5 +1,5 @@
 name: BlazeSMP
-version: 1.1.0
+version: 1.2.0
 main: com.blazesmp.BlazeSMP
 api-version: '1.21'
 author: BlazeSMP
@@ -18,17 +18,29 @@ commands:
     usage: /eco <give|take|set> <player> <amount>
     permission: blazesmp.eco
   drill:
-    description: Give yourself a 3x3 Drill
+    description: Give a 3x3 Drill
     usage: /drill
     permission: blazesmp.drill
   shardgainer:
-    description: Give yourself a Shardgainer
+    description: Give a Shardgainer
     usage: /shardgainer
     permission: blazesmp.shardgainer
+  shards:
+    description: View or manage Emerald Shards
+    usage: /shards [player|give|take|set]
+  rank:
+    description: View or manage Blaze SMP ranks
+    usage: /rank <player> OR /rank set <player> <rank>
 permissions:
   blazesmp.eco:
-    default: op
+    default: false
   blazesmp.drill:
-    default: op
+    default: false
   blazesmp.shardgainer:
-    default: op
+    default: false
+  blazesmp.shards.others:
+    default: false
+  blazesmp.shards.admin:
+    default: false
+  blazesmp.rank.manage:
+    default: false
