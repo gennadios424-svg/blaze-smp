@@ -6,7 +6,6 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.scoreboard.Team.Option;
 import org.bukkit.scoreboard.Team.OptionStatus;
-import org.bukkit.scoreboard.Team.DisplaySlot;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -14,7 +13,6 @@ import org.bukkit.OfflinePlayer;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
