@@ -1,22 +1,24 @@
 package com.blazesmp;
 
+import com.blazesmp.anticheat.AntiCheatService;
+import com.blazesmp.command.BalanceCommand;
+import com.blazesmp.command.DrillCommand;
+import com.blazesmp.command.EcoCommand;
+import com.blazesmp.command.RankCommand;
+import com.blazesmp.command.SellCommand;
+import com.blazesmp.command.ShardCommand;
+import com.blazesmp.command.ShardGainerCommand;
+import com.blazesmp.command.SusListCommand;
+import com.blazesmp.command.WorthCommand;
+import com.blazesmp.custom.DrillListener;
+import com.blazesmp.custom.DrillService;
+import com.blazesmp.custom.ShardGainerListener;
+import com.blazesmp.custom.ShardGainerService;
 import com.blazesmp.economy.MoneyService;
 import com.blazesmp.economy.ShardService;
 import com.blazesmp.economy.WorthService;
 import com.blazesmp.gui.SellGUI;
 import com.blazesmp.gui.WorthGUI;
-import com.blazesmp.command.BalanceCommand;
-import com.blazesmp.command.EcoCommand;
-import com.blazesmp.command.SellCommand;
-import com.blazesmp.command.WorthCommand;
-import com.blazesmp.command.DrillCommand;
-import com.blazesmp.command.ShardGainerCommand;
-import com.blazesmp.command.ShardCommand;
-import com.blazesmp.command.RankCommand;
-import com.blazesmp.custom.DrillListener;
-import com.blazesmp.custom.DrillService;
-import com.blazesmp.custom.ShardGainerListener;
-import com.blazesmp.custom.ShardGainerService;
 import com.blazesmp.rank.RankListener;
 import com.blazesmp.rank.RankService;
 import org.bukkit.command.PluginCommand;
@@ -31,6 +33,7 @@ public final class BlazeSMP extends JavaPlugin {
     private DrillService drillService;
     private ShardGainerService shardGainerService;
     private RankService rankService;
+    private AntiCheatService antiCheatService;
 
     @Override
     public void onEnable() {
@@ -39,6 +42,7 @@ public final class BlazeSMP extends JavaPlugin {
         moneyService = new MoneyService(this);
         shardService = new ShardService(this);
         rankService = new RankService(this);
+        antiCheatService = new AntiCheatService(this);
 
         worthService = new WorthService(this);
         worthService.reload();
@@ -55,18 +59,20 @@ public final class BlazeSMP extends JavaPlugin {
         register("shardgainer", new ShardGainerCommand(shardGainerService));
         register("shards", new ShardCommand(shardService));
         register("rank", new RankCommand(rankService));
+        register("suslist", new SusListCommand(antiCheatService));
 
         getServer().getPluginManager().registerEvents(sellGUI, this);
         getServer().getPluginManager().registerEvents(worthGUI, this);
         getServer().getPluginManager().registerEvents(new DrillListener(drillService), this);
         getServer().getPluginManager().registerEvents(new ShardGainerListener(shardGainerService), this);
         getServer().getPluginManager().registerEvents(new RankListener(rankService), this);
+        getServer().getPluginManager().registerEvents(antiCheatService, this);
 
         for (org.bukkit.entity.Player player : getServer().getOnlinePlayers()) {
             rankService.apply(player);
         }
 
-        getLogger().info("Blaze SMP economy, Drill, Shardgainer, Emerald Shards and Rank systems enabled.");
+        getLogger().info("Blaze SMP systems enabled, including anti-cheat suspect tracking and Blaze Shards.");
     }
 
     @Override
