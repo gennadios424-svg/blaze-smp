@@ -4,7 +4,6 @@ import com.blazesmp.economy.MoneyService;
 import com.blazesmp.economy.WorthService;
 import com.blazesmp.util.ItemUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -13,7 +12,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
@@ -29,14 +27,13 @@ public final class WorthGUI implements Listener {
     private final Map<UUID, String> awaitingSearch = new HashMap<>();
 
     public WorthGUI(JavaPlugin plugin, WorthService worth) { this.plugin = plugin; this.worth = worth; }
-
-    public void open(Player player, String query) { openPage(player, query, 0); }
+    public void open(Player player, String query) { openPage(player, query == null ? "" : query, 0); }
 
     private void openPage(Player player, String query, int page) {
         List<Material> materials = worth.search(query);
         int pages = Math.max(1, (materials.size() + 44) / 45);
         page = Math.max(0, Math.min(page, pages - 1));
-        Inventory inv = Bukkit.createInventory(new WorthHolder(), 54, TITLE + " §7(" + (page + 1) + "/" + pages + ")");
+        Inventory inv = Bukkit.createInventory(new WorthHolder(query, page), 54, TITLE + " §7(" + (page + 1) + "/" + pages + ")");
         int start = page * 45;
         for (int i = 0; i < 45 && start + i < materials.size(); i++) {
             Material mat = materials.get(start + i);
@@ -83,27 +80,22 @@ public final class WorthGUI implements Listener {
 
     @EventHandler public void onClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
-        if (!(event.getView().getTopInventory().getHolder() instanceof WorthHolder)) return;
+        if (!(event.getView().getTopInventory().getHolder() instanceof WorthHolder holder)) return;
         event.setCancelled(true);
         int slot = event.getRawSlot();
         if (slot == 49) openSearchPrompt(player);
-        else if (slot == 45) changePage(player, event.getView().getTitle(), -1);
-        else if (slot == 53) changePage(player, event.getView().getTitle(), 1);
+        else if (slot == 45) openPage(player, holder.query, holder.page - 1);
+        else if (slot == 53) openPage(player, holder.query, holder.page + 1);
     }
 
     @EventHandler public void onDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof WorthHolder) event.setCancelled(true);
     }
 
-    private void changePage(Player player, String title, int delta) {
-        String marker = title.substring(title.indexOf('(') + 1, title.indexOf('/'));
-        String pageText = marker.trim();
-        int current;
-        try { current = Integer.parseInt(pageText) - 1; } catch (NumberFormatException e) { current = 0; }
-        openPage(player, "", current + delta);
-    }
-
     private static final class WorthHolder implements org.bukkit.inventory.InventoryHolder {
+        private final String query;
+        private final int page;
+        private WorthHolder(String query, int page) { this.query = query; this.page = page; }
         @Override public Inventory getInventory() { return null; }
     }
 }
