@@ -62,3 +62,21 @@ shardgainer:
     3: 10
     4: 7
     5: 3
+
+rank-permissions:
+  owner:
+    - blazesmp.*
+  dev:
+    - blazesmp.eco
+    - blazesmp.drill
+    - blazesmp.shardgainer
+    - blazesmp.shards.others
+    - blazesmp.shards.admin
+    - blazesmp.rank.manage
+  mod:
+    - blazesmp.eco
+    - blazesmp.shards.others
+    - blazesmp.shards.admin
+    - blazesmp.rank.manage
+  media: []
+  member: []
