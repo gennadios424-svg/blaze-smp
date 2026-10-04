@@ -1,0 +1,17 @@
+worth:
+  KELP:
+    sell: 200
+  SEA_PICKLE:
+    sell: 150
+  PINK_PETALS:
+    sell: 125
+  SHULKER_BOX:
+    sell: 200
+  DIAMOND_HOE:
+    sell: 250
+  NETHERITE_BLOCK:
+    sell: 250000
+  DRAGON_EGG:
+    sell: 2000000
+money:
+  starting-balance: 0
