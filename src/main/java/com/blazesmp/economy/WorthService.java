@@ -26,7 +26,7 @@ public final class WorthService {
             Material.COMMAND_BLOCK_MINECART, Material.JIGSAW, Material.STRUCTURE_BLOCK,
             Material.STRUCTURE_VOID, Material.BARRIER, Material.LIGHT,
             Material.DEBUG_STICK, Material.KNOWLEDGE_BOOK, Material.SPAWNER,
-            Material.TEST_INSTANCE_BLOCK, Material.TEST_INSTANCE_BLOCK
+            Material.TEST_INSTANCE_BLOCK
     );
 
     public WorthService(JavaPlugin plugin) { this.plugin = plugin; }
