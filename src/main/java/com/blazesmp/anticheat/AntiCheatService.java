@@ -1,6 +1,5 @@
 package com.blazesmp.anticheat;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -11,11 +10,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -28,10 +25,9 @@ public final class AntiCheatService implements Listener {
     private final JavaPlugin plugin;
     private final Map<UUID, Suspect> suspects = new LinkedHashMap<>();
     private final Map<UUID, Long> stationarySince = new HashMap<>();
-    private final Map<UUID, Location> lastLocation = new HashMap<>();
     private final Map<UUID, Deque<Long>> clicks = new HashMap<>();
     private final Map<UUID, Deque<Long>> headMoves = new HashMap<>();
-    private final Map<UUID, Deque<Material>> valuableBlocks = new HashMap<>();
+    private final Map<UUID, Integer> consecutiveDiamonds = new HashMap<>();
 
     public AntiCheatService(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -48,12 +44,9 @@ public final class AntiCheatService implements Listener {
         boolean headMoved = from.getYaw() != to.getYaw() || from.getPitch() != to.getPitch();
         if (positionMoved) {
             stationarySince.remove(p.getUniqueId());
-        } else if (headMoved) {
-            stationarySince.putIfAbsent(p.getUniqueId(), System.currentTimeMillis());
-            addWindowEvent(headMoves, p.getUniqueId(), 1000L);
-            checkMacro(p);
         } else {
             stationarySince.putIfAbsent(p.getUniqueId(), System.currentTimeMillis());
+            if (headMoved) addWindowEvent(headMoves, p.getUniqueId(), 1000L);
             checkMacro(p);
         }
     }
@@ -61,9 +54,8 @@ public final class AntiCheatService implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onClick(PlayerInteractEvent event) {
         Player p = event.getPlayer();
-        long now = System.currentTimeMillis();
         Deque<Long> q = clicks.computeIfAbsent(p.getUniqueId(), k -> new ArrayDeque<>());
-        q.addLast(now);
+        q.addLast(System.currentTimeMillis());
         trim(q, CLICK_WINDOW);
         if (q.size() >= 40) {
             flag(p, "AutoClicker (40+ clicks/sec)", 5);
@@ -74,20 +66,21 @@ public final class AntiCheatService implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getWhoClicked() instanceof Player p) {
-            checkMacro(p);
-        }
+        if (event.getWhoClicked() instanceof Player p) checkMacro(p);
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
         Player p = event.getPlayer();
         Material type = event.getBlock().getType();
-        if (isValuable(type)) {
-            Deque<Material> q = valuableBlocks.computeIfAbsent(p.getUniqueId(), k -> new ArrayDeque<>());
-            q.addLast(type);
-            while (q.size() > 20) q.removeFirst();
-            checkMiningPattern(p, q);
+        if (type == Material.DIAMOND_ORE || type == Material.DEEPSLATE_DIAMOND_ORE) {
+            int count = consecutiveDiamonds.merge(p.getUniqueId(), 1, Integer::sum);
+            if (count >= 15) {
+                flag(p, "15+ consecutive diamond ores mined (possible X-Ray)", 6);
+                consecutiveDiamonds.put(p.getUniqueId(), 0);
+            }
+        } else {
+            consecutiveDiamonds.put(p.getUniqueId(), 0);
         }
         checkMacro(p);
     }
@@ -96,10 +89,9 @@ public final class AntiCheatService implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         UUID id = event.getPlayer().getUniqueId();
         stationarySince.remove(id);
-        lastLocation.remove(id);
         clicks.remove(id);
         headMoves.remove(id);
-        valuableBlocks.remove(id);
+        consecutiveDiamonds.remove(id);
     }
 
     private void checkMacro(Player p) {
@@ -111,22 +103,6 @@ public final class AntiCheatService implements Listener {
             flag(p, "Stationary 5h+ with repeated input/head movement (possible macro)", 8);
             stationarySince.put(p.getUniqueId(), System.currentTimeMillis());
         }
-    }
-
-    private void checkMiningPattern(Player p, Deque<Material> q) {
-        if (q.size() < 15) return;
-        int diamonds = 0;
-        for (Material m : q) if (m == Material.DIAMOND_ORE || m == Material.DEEPSLATE_DIAMOND_ORE) diamonds++;
-        if (diamonds >= 15) {
-            flag(p, "Unusual diamond mining pattern (15+ diamond ores in recent blocks)", 4);
-            q.clear();
-        }
-    }
-
-    private boolean isValuable(Material m) {
-        return m == Material.DIAMOND_ORE || m == Material.DEEPSLATE_DIAMOND_ORE
-                || m == Material.EMERALD_ORE || m == Material.DEEPSLATE_EMERALD_ORE
-                || m == Material.ANCIENT_DEBRIS;
     }
 
     private void addWindowEvent(Map<UUID, Deque<Long>> map, UUID id, long window) {
