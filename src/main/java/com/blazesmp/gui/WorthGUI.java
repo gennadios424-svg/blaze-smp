@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class WorthGUI implements Listener {
-    private static final String TITLE = "§2Blaze SMP §8| §aItem Worth";
+    private static final String TITLE = "§6§l🔥 BLAZE SMP §8| §e§lITEM WORTH";
     private final JavaPlugin plugin;
     private final WorthService worth;
     private final Map<UUID, String> awaitingSearch = new HashMap<>();
@@ -33,16 +33,28 @@ public final class WorthGUI implements Listener {
         List<Material> materials = worth.search(query);
         int pages = Math.max(1, (materials.size() + 44) / 45);
         page = Math.max(0, Math.min(page, pages - 1));
-        Inventory inv = Bukkit.createInventory(new WorthHolder(query, page), 54, TITLE + " §7(" + (page + 1) + "/" + pages + ")");
+        Inventory inv = Bukkit.createInventory(new WorthHolder(query, page), 54,
+                TITLE + " §7(" + (page + 1) + "/" + pages + ")");
+
+        for (int slot : new int[]{45,46,47,48,50,51,52,53}) {
+            inv.setItem(slot, ItemUtil.button(Material.ORANGE_STAINED_GLASS_PANE, "§6", List.of()));
+        }
+
         int start = page * 45;
         for (int i = 0; i < 45 && start + i < materials.size(); i++) {
             Material mat = materials.get(start + i);
             long price = worth.getSellPrice(mat);
-            inv.setItem(i, ItemUtil.button(mat, "§a" + ItemUtil.pretty(mat), List.of("§7Sell value: §f" + MoneyService.format(price) + " §7each", "§7Stack: §f" + MoneyService.format(worth.calculate(mat, mat.getMaxStackSize())))));
+            inv.setItem(i, ItemUtil.button(mat, "§f" + ItemUtil.pretty(mat),
+                    List.of("§7Sell Value: §e§l" + MoneyService.format(price) + " §7each",
+                            "§7Stack Value: §e" + MoneyService.format(worth.calculate(mat, mat.getMaxStackSize())))));
         }
-        inv.setItem(45, ItemUtil.button(Material.ARROW, "§ePrevious Page", List.of("§7Page " + Math.max(1, page))));
-        inv.setItem(49, ItemUtil.button(Material.COMPASS, "§bSearch", List.of("§7Click and type an item name in chat")));
-        inv.setItem(53, ItemUtil.button(Material.ARROW, "§eNext Page", List.of("§7Page " + Math.min(pages, page + 2))));
+
+        inv.setItem(45, ItemUtil.button(Material.ARROW, "§6Previous Page",
+                List.of("§7Page §e" + Math.max(1, page))));
+        inv.setItem(49, ItemUtil.button(Material.COMPASS, "§e§lSearch",
+                List.of("§7Click and type an item name in chat")));
+        inv.setItem(53, ItemUtil.button(Material.ARROW, "§6Next Page",
+                List.of("§7Page §e" + Math.min(pages, page + 2))));
         player.openInventory(inv);
     }
 
@@ -52,9 +64,9 @@ public final class WorthGUI implements Listener {
         try { exact = Material.valueOf(q.toUpperCase(Locale.ROOT)); } catch (IllegalArgumentException ignored) { }
         if (exact != null && worth.getSellPrice(exact) != null) {
             long price = worth.getSellPrice(exact);
-            player.sendMessage("§a§l" + ItemUtil.pretty(exact));
-            player.sendMessage("§7Sell Value: §f" + MoneyService.format(price) + " §7each");
-            player.sendMessage("§7Full stack: §f" + MoneyService.format(worth.calculate(exact, exact.getMaxStackSize())));
+            player.sendMessage("§6§l🔥 " + ItemUtil.pretty(exact));
+            player.sendMessage("§7Sell Value: §e§l" + MoneyService.format(price) + " §7each");
+            player.sendMessage("§7Full stack: §e" + MoneyService.format(worth.calculate(exact, exact.getMaxStackSize())));
             return;
         }
         List<Material> matches = worth.search(raw);
@@ -66,7 +78,7 @@ public final class WorthGUI implements Listener {
     public void openSearchPrompt(Player player) {
         awaitingSearch.put(player.getUniqueId(), "");
         player.closeInventory();
-        player.sendMessage("§bType an item name to search the worth list. Type §fcancel §bto stop.");
+        player.sendMessage("§6§l🔥 BLAZE §7» §eType an item name to search. Type §fcancel §eto stop.");
     }
 
     @EventHandler public void onChat(AsyncPlayerChatEvent event) {
