@@ -1,0 +1,22 @@
+name: BlazeSMP
+version: 1.0.0
+main: com.blazesmp.BlazeSMP
+api-version: '1.21'
+author: BlazeSMP
+commands:
+  worth:
+    description: View item sell values
+    usage: /worth [item|search]
+  sell:
+    description: Sell items for money
+    usage: /sell
+  balance:
+    description: View your balance
+    aliases: [bal, money]
+  eco:
+    description: Economy administration
+    usage: /eco <give|take|set> <player> <amount>
+    permission: blazesmp.eco
+permissions:
+  blazesmp.eco:
+    default: op
