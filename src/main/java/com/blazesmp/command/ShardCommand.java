@@ -21,8 +21,8 @@ public final class ShardCommand implements CommandExecutor {
                 sender.sendMessage("§cUsage: /shards <player> or /shards give|take|set <player> <amount>");
                 return true;
             }
-            sender.sendMessage("§e§l💚 Emerald Shards");
-            sender.sendMessage("§7Balance: §f" + ShardService.format(shards.getBalance(player)) + " Shards");
+            sender.sendMessage("§b§l🔥 Blaze Shards");
+            sender.sendMessage("§7Balance: §f" + ShardService.format(shards.getBalance(player)) + " Blaze Shards");
             return true;
         }
 
@@ -32,7 +32,7 @@ public final class ShardCommand implements CommandExecutor {
                 return true;
             }
             OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
-            sender.sendMessage("§e" + target.getName() + "§7 has §f" + ShardService.format(shards.getBalance(target)) + " Emerald Shards.");
+            sender.sendMessage("§b" + target.getName() + "§7 has §f" + ShardService.format(shards.getBalance(target)) + " Blaze Shards.");
             return true;
         }
 
@@ -69,7 +69,7 @@ public final class ShardCommand implements CommandExecutor {
             return true;
         }
 
-        sender.sendMessage("§aUpdated §f" + target.getName() + "§a's shard balance to §f" +
+        sender.sendMessage("§aUpdated §f" + target.getName() + "§a's Blaze Shard balance to §f" +
                 ShardService.format(shards.getBalance(target)) + "§a.");
         return true;
     }
