@@ -15,7 +15,23 @@ worth:
     sell: 2000000
   CHEST:
     sell: 25
-  CHEST_BOAT:
+  OAK_CHEST_BOAT:
+    sell: 50
+  SPRUCE_CHEST_BOAT:
+    sell: 50
+  BIRCH_CHEST_BOAT:
+    sell: 50
+  JUNGLE_CHEST_BOAT:
+    sell: 50
+  ACACIA_CHEST_BOAT:
+    sell: 50
+  DARK_OAK_CHEST_BOAT:
+    sell: 50
+  MANGROVE_CHEST_BOAT:
+    sell: 50
+  BAMBOO_CHEST_RAFT:
+    sell: 50
+  CHERRY_CHEST_BOAT:
     sell: 50
   TRAPPED_CHEST:
     sell: 75
