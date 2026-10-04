@@ -16,7 +16,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,7 +25,11 @@ public final class WorthGUI implements Listener {
     private final WorthService worth;
     private final Map<UUID, String> awaitingSearch = new HashMap<>();
 
-    public WorthGUI(JavaPlugin plugin, WorthService worth) { this.plugin = plugin; this.worth = worth; }
+    public WorthGUI(JavaPlugin plugin, WorthService worth) {
+        this.plugin = plugin;
+        this.worth = worth;
+    }
+
     public void open(Player player, String query) { openPage(player, query == null ? "" : query, 0); }
 
     private void openPage(Player player, String query, int page) {
@@ -36,9 +39,8 @@ public final class WorthGUI implements Listener {
         Inventory inv = Bukkit.createInventory(new WorthHolder(query, page), 54,
                 TITLE + " §7(" + (page + 1) + "/" + pages + ")");
 
-        for (int slot : new int[]{45,46,47,48,50,51,52,53}) {
+        for (int slot : new int[]{45,46,47,48,50,51,52,53})
             inv.setItem(slot, ItemUtil.button(Material.ORANGE_STAINED_GLASS_PANE, "§6", List.of()));
-        }
 
         int start = page * 45;
         for (int i = 0; i < 45 && start + i < materials.size(); i++) {
@@ -46,7 +48,7 @@ public final class WorthGUI implements Listener {
             long price = worth.getSellPrice(mat);
             inv.setItem(i, ItemUtil.button(mat, "§f" + ItemUtil.pretty(mat),
                     List.of("§7Sell Value: §e§l" + MoneyService.format(price) + " §7each",
-                            "§7Stack Value: §e" + MoneyService.format(worth.calculate(mat, mat.getMaxStackSize())))));
+                            "§7Stack Value: §e" + MoneyService.format(worth.calculate(mat, Math.max(1, mat.getMaxStackSize()))))));
         }
 
         inv.setItem(45, ItemUtil.button(Material.ARROW, "§6Previous Page",
@@ -56,23 +58,6 @@ public final class WorthGUI implements Listener {
         inv.setItem(53, ItemUtil.button(Material.ARROW, "§6Next Page",
                 List.of("§7Page §e" + Math.min(pages, page + 2))));
         player.openInventory(inv);
-    }
-
-    public void showItem(Player player, String raw) {
-        String q = raw.toLowerCase(Locale.ROOT).replace(' ', '_');
-        Material exact = null;
-        try { exact = Material.valueOf(q.toUpperCase(Locale.ROOT)); } catch (IllegalArgumentException ignored) { }
-        if (exact != null && worth.getSellPrice(exact) != null) {
-            long price = worth.getSellPrice(exact);
-            player.sendMessage("§6§l🔥 " + ItemUtil.pretty(exact));
-            player.sendMessage("§7Sell Value: §e§l" + MoneyService.format(price) + " §7each");
-            player.sendMessage("§7Full stack: §e" + MoneyService.format(worth.calculate(exact, exact.getMaxStackSize())));
-            return;
-        }
-        List<Material> matches = worth.search(raw);
-        if (matches.size() == 1) { showItem(player, matches.get(0).name()); return; }
-        if (matches.isEmpty()) player.sendMessage("§cNo priced item found for §f" + raw + "§c.");
-        else open(player, raw);
     }
 
     public void openSearchPrompt(Player player) {
