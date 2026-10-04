@@ -32,9 +32,7 @@ public final class SellGUI implements Listener {
     private final MoneyService money;
     private final Set<Player> processing = new HashSet<>();
 
-    public SellGUI(JavaPlugin plugin, WorthService worth, MoneyService money) {
-        this.plugin = plugin; this.worth = worth; this.money = money;
-    }
+    public SellGUI(JavaPlugin plugin, WorthService worth, MoneyService money) { this.plugin = plugin; this.worth = worth; this.money = money; }
 
     public void open(Player player) {
         Inventory inv = Bukkit.createInventory(new SellHolder(), 54, TITLE);
@@ -48,30 +46,25 @@ public final class SellGUI implements Listener {
         Inventory top = event.getView().getTopInventory();
         if (!(top.getHolder() instanceof SellHolder)) return;
         int raw = event.getRawSlot();
-
         if (raw >= 0 && raw < SELL_SLOTS) {
             if (event.getClick() == ClickType.NUMBER_KEY) {
                 event.setCancelled(true);
                 swapWithHotbar(player, top, raw, event.getHotbarButton());
                 updateButtons(top);
             } else if (event.getClick() == ClickType.DOUBLE_CLICK) {
-                // Prevent Bukkit's double-click collection from pulling items out of the sell container unexpectedly.
                 event.setCancelled(true);
             } else {
                 Bukkit.getScheduler().runTask(plugin, () -> updateButtons(top));
             }
             return;
         }
-
         if (raw >= SELL_SLOTS && raw < top.getSize()) {
             event.setCancelled(true);
             if (raw == 49) processSell(player, top);
             else if (raw == 48) clearSellSlots(player, top);
             return;
         }
-
-        if (raw < 0) return;
-        if (event.isShiftClick() && raw >= top.getSize()) {
+        if (raw >= top.getSize() && event.isShiftClick()) {
             event.setCancelled(true);
             ItemStack source = event.getCurrentItem();
             if (source != null && !source.getType().isAir()) {
@@ -88,24 +81,18 @@ public final class SellGUI implements Listener {
     public void onDrag(InventoryDragEvent event) {
         if (!(event.getView().getTopInventory().getHolder() instanceof SellHolder)) return;
         for (int slot : event.getRawSlots()) {
-            if (slot >= event.getView().getTopInventory().getSize() || slot >= SELL_SLOTS) {
-                event.setCancelled(true);
-                return;
-            }
+            if (slot >= event.getView().getTopInventory().getSize() || slot >= SELL_SLOTS) { event.setCancelled(true); return; }
         }
         Bukkit.getScheduler().runTask(plugin, () -> updateButtons(event.getView().getTopInventory()));
     }
 
     @EventHandler public void onClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
-        if (!(event.getInventory().getHolder() instanceof SellHolder)) return;
-        returnItems(player, event.getInventory());
+        if (event.getInventory().getHolder() instanceof SellHolder) returnItems(player, event.getInventory());
     }
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
-        if (event.getPlayer().getOpenInventory().getTopInventory().getHolder() instanceof SellHolder) {
-            returnItems(event.getPlayer(), event.getPlayer().getOpenInventory().getTopInventory());
-        }
+        if (event.getPlayer().getOpenInventory().getTopInventory().getHolder() instanceof SellHolder) returnItems(event.getPlayer(), event.getPlayer().getOpenInventory().getTopInventory());
     }
 
     public void closeAllAndReturnItems() {
@@ -121,48 +108,39 @@ public final class SellGUI implements Listener {
         if (!processing.add(player)) return;
         List<ItemStack> snapshot = new ArrayList<>();
         try {
-            long total = calculateTotal(inv, true);
-            if (total <= 0) {
-                player.sendMessage("§cPut items in the sell slots first.");
+            long total = calculateTotal(inv);
+            if (total < 0) {
+                player.sendMessage("§cThis sell contains an unsupported item or an invalidly large transaction. Nothing was removed.");
                 return;
             }
-            // Snapshot the exact stacks before mutation so any failed money operation can restore them.
+            if (total == 0) { player.sendMessage("§cPut items in the sell slots first."); return; }
             for (int i = 0; i < SELL_SLOTS; i++) {
                 ItemStack item = inv.getItem(i);
                 if (item != null && !item.getType().isAir()) snapshot.add(item.clone());
             }
-            long verifiedTotal = calculateTotal(inv, true);
-            if (verifiedTotal != total) {
-                player.sendMessage("§cTransaction changed during validation. Nothing was sold.");
-                return;
-            }
+            long verifiedTotal = calculateTotal(inv);
+            if (verifiedTotal != total) { player.sendMessage("§cTransaction changed during validation. Nothing was sold."); return; }
             for (int i = 0; i < SELL_SLOTS; i++) inv.setItem(i, null);
-            try {
-                money.deposit(player, verifiedTotal);
-            } catch (RuntimeException ex) {
+            try { money.deposit(player, verifiedTotal); }
+            catch (RuntimeException ex) {
                 for (ItemStack item : snapshot) giveOrDrop(player, item);
                 player.sendMessage("§cSale failed safely; your items were restored.");
                 return;
             }
             player.sendMessage("§aSold your items for §f" + MoneyService.format(verifiedTotal) + "§a.");
             player.closeInventory();
-        } finally {
-            processing.remove(player);
-        }
+        } finally { processing.remove(player); }
     }
 
-    private long calculateTotal(Inventory inv, boolean rejectUnsupported) {
+    private long calculateTotal(Inventory inv) {
         long total = 0L;
         for (int i = 0; i < SELL_SLOTS; i++) {
             ItemStack item = inv.getItem(i);
             if (item == null || item.getType().isAir()) continue;
             Long price = worth.getSellPrice(item.getType());
-            if (price == null) {
-                if (rejectUnsupported) throw new UnsupportedOperationException(ItemUtil.pretty(item.getType()));
-                continue;
-            }
+            if (price == null) return -1L;
             long value = worth.calculate(item.getType(), item.getAmount());
-            if (value == Long.MAX_VALUE || Long.MAX_VALUE - total < value) throw new ArithmeticException("transaction overflow");
+            if (value == Long.MAX_VALUE || Long.MAX_VALUE - total < value) return -1L;
             total += value;
         }
         return total;
@@ -191,23 +169,18 @@ public final class SellGUI implements Listener {
 
     private int addToSell(Inventory inv, ItemStack incoming) {
         if (incoming == null || incoming.getType().isAir()) return 0;
-        int remaining = incoming.getAmount();
-        int max = incoming.getMaxStackSize();
+        int remaining = incoming.getAmount(), max = incoming.getMaxStackSize();
         for (int i = 0; i < SELL_SLOTS && remaining > 0; i++) {
             ItemStack existing = inv.getItem(i);
             if (existing != null && existing.isSimilar(incoming) && existing.getAmount() < max) {
                 int move = Math.min(remaining, max - existing.getAmount());
-                existing.setAmount(existing.getAmount() + move);
-                remaining -= move;
+                existing.setAmount(existing.getAmount() + move); remaining -= move;
             }
         }
         for (int i = 0; i < SELL_SLOTS && remaining > 0; i++) {
             if (inv.getItem(i) == null || inv.getItem(i).getType().isAir()) {
                 int move = Math.min(remaining, max);
-                ItemStack part = incoming.clone();
-                part.setAmount(move);
-                inv.setItem(i, part);
-                remaining -= move;
+                ItemStack part = incoming.clone(); part.setAmount(move); inv.setItem(i, part); remaining -= move;
             }
         }
         return incoming.getAmount() - remaining;
@@ -215,26 +188,20 @@ public final class SellGUI implements Listener {
 
     private void swapWithHotbar(Player player, Inventory inv, int slot, int hotbar) {
         if (hotbar < 0 || hotbar > 8) return;
-        ItemStack hot = player.getInventory().getItem(hotbar);
-        ItemStack top = inv.getItem(slot);
+        ItemStack hot = player.getInventory().getItem(hotbar), top = inv.getItem(slot);
         if (hot == null || hot.getType().isAir()) return;
         inv.setItem(slot, hot.clone());
         player.getInventory().setItem(hotbar, top == null ? null : top.clone());
     }
 
     private void updateButtons(Inventory inv) {
-        long total = 0L;
-        boolean invalid = false;
+        long total = 0L; boolean invalid = false;
         for (int i = 0; i < SELL_SLOTS; i++) {
             ItemStack item = inv.getItem(i);
             if (item == null || item.getType().isAir()) continue;
             Long price = worth.getSellPrice(item.getType());
             if (price == null) invalid = true;
-            else {
-                long value = worth.calculate(item.getType(), item.getAmount());
-                if (value == Long.MAX_VALUE || Long.MAX_VALUE - total < value) invalid = true;
-                else total += value;
-            }
+            else { long value = worth.calculate(item.getType(), item.getAmount()); if (value == Long.MAX_VALUE || Long.MAX_VALUE - total < value) invalid = true; else total += value; }
         }
         inv.setItem(45, ItemUtil.button(Material.PAPER, "§aCurrent Total", List.of("§f" + MoneyService.format(total), invalid ? "§cContains an unsupported item" : "§7Server recalculates on sale")));
         inv.setItem(48, ItemUtil.button(Material.BARRIER, "§cClear", List.of("§7Return all sell-slot items")));
@@ -242,7 +209,5 @@ public final class SellGUI implements Listener {
         inv.setItem(50, ItemUtil.button(Material.BOOK, "§eHow it works", List.of("§7Put items in the top slots.", "§7Shift-click from inventory works.", "§7Closing returns unsold items.")));
     }
 
-    private static final class SellHolder implements InventoryHolder {
-        @Override public Inventory getInventory() { return null; }
-    }
+    private static final class SellHolder implements InventoryHolder { @Override public Inventory getInventory() { return null; } }
 }
