@@ -1,5 +1,6 @@
 package com.blazesmp.custom;
 
+import com.blazesmp.economy.ShardService;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -12,16 +13,20 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public final class ShardGainerService {
     private final JavaPlugin plugin;
-    private final NamespacedKey idKey, counterKey;
+    private final ShardService shards;
+    private final NamespacedKey idKey, counterKey, transactionKey;
     private final Random random = new Random();
 
-    public ShardGainerService(JavaPlugin plugin) {
+    public ShardGainerService(JavaPlugin plugin, ShardService shards) {
         this.plugin = plugin;
+        this.shards = shards;
         idKey = new NamespacedKey(plugin, "custom_item_id");
         counterKey = new NamespacedKey(plugin, "shardgainer_blocks");
+        transactionKey = new NamespacedKey(plugin, "shardgainer_transaction");
     }
 
     public ItemStack createShardGainer() {
@@ -53,7 +58,9 @@ public final class ShardGainerService {
 
     public void reset(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
-        meta.getPersistentDataContainer().set(counterKey, PersistentDataType.INTEGER, 0);
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        pdc.set(counterKey, PersistentDataType.INTEGER, 0);
+        pdc.remove(transactionKey);
         item.setItemMeta(meta);
     }
 
@@ -84,12 +91,12 @@ public final class ShardGainerService {
         return 1;
     }
 
-    public void giveShards(Player player, int amount) {
-        // Compatibility layer for the server's Emerald Shard item/currency:
-        // emeralds are represented as the existing emerald resource rather than money.
-        ItemStack shards = new ItemStack(Material.EMERALD, amount);
-        Map<Integer, ItemStack> left = player.getInventory().addItem(shards);
-        for (ItemStack stack : left.values())
-            player.getWorld().dropItemNaturally(player.getLocation(), stack);
+    public void giveShards(Player player, ItemStack item, int amount) {
+        String transaction = UUID.randomUUID().toString();
+        ItemMeta meta = item.getItemMeta();
+        meta.getPersistentDataContainer().set(transactionKey, PersistentDataType.STRING, transaction);
+        item.setItemMeta(meta);
+        shards.deposit(player, amount);
+        reset(item);
     }
 }
