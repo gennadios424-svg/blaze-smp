@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 public final class SellGUI implements Listener {
-    private static final String TITLE = "§2Blaze SMP §8| §aSell Items";
+    private static final String TITLE = "§6§l🔥 BLAZE SMP §8| §e§lSELL ITEMS";
     private static final int SELL_SLOTS = 45;
     private final JavaPlugin plugin;
     private final WorthService worth;
@@ -81,7 +81,10 @@ public final class SellGUI implements Listener {
     public void onDrag(InventoryDragEvent event) {
         if (!(event.getView().getTopInventory().getHolder() instanceof SellHolder)) return;
         for (int slot : event.getRawSlots()) {
-            if (slot >= event.getView().getTopInventory().getSize() || slot >= SELL_SLOTS) { event.setCancelled(true); return; }
+            if (slot >= event.getView().getTopInventory().getSize() || slot >= SELL_SLOTS) {
+                event.setCancelled(true);
+                return;
+            }
         }
         Bukkit.getScheduler().runTask(plugin, () -> updateButtons(event.getView().getTopInventory()));
     }
@@ -92,7 +95,8 @@ public final class SellGUI implements Listener {
     }
 
     @EventHandler public void onQuit(PlayerQuitEvent event) {
-        if (event.getPlayer().getOpenInventory().getTopInventory().getHolder() instanceof SellHolder) returnItems(event.getPlayer(), event.getPlayer().getOpenInventory().getTopInventory());
+        if (event.getPlayer().getOpenInventory().getTopInventory().getHolder() instanceof SellHolder)
+            returnItems(event.getPlayer(), event.getPlayer().getOpenInventory().getTopInventory());
     }
 
     public void closeAllAndReturnItems() {
@@ -164,7 +168,8 @@ public final class SellGUI implements Listener {
     }
 
     private void giveOrDrop(Player player, ItemStack item) {
-        for (ItemStack left : player.getInventory().addItem(item).values()) player.getWorld().dropItemNaturally(player.getLocation(), left);
+        for (ItemStack left : player.getInventory().addItem(item).values())
+            player.getWorld().dropItemNaturally(player.getLocation(), left);
     }
 
     private int addToSell(Inventory inv, ItemStack incoming) {
@@ -174,13 +179,17 @@ public final class SellGUI implements Listener {
             ItemStack existing = inv.getItem(i);
             if (existing != null && existing.isSimilar(incoming) && existing.getAmount() < max) {
                 int move = Math.min(remaining, max - existing.getAmount());
-                existing.setAmount(existing.getAmount() + move); remaining -= move;
+                existing.setAmount(existing.getAmount() + move);
+                remaining -= move;
             }
         }
         for (int i = 0; i < SELL_SLOTS && remaining > 0; i++) {
             if (inv.getItem(i) == null || inv.getItem(i).getType().isAir()) {
                 int move = Math.min(remaining, max);
-                ItemStack part = incoming.clone(); part.setAmount(move); inv.setItem(i, part); remaining -= move;
+                ItemStack part = incoming.clone();
+                part.setAmount(move);
+                inv.setItem(i, part);
+                remaining -= move;
             }
         }
         return incoming.getAmount() - remaining;
@@ -201,13 +210,30 @@ public final class SellGUI implements Listener {
             if (item == null || item.getType().isAir()) continue;
             Long price = worth.getSellPrice(item.getType());
             if (price == null) invalid = true;
-            else { long value = worth.calculate(item.getType(), item.getAmount()); if (value == Long.MAX_VALUE || Long.MAX_VALUE - total < value) invalid = true; else total += value; }
+            else {
+                long value = worth.calculate(item.getType(), item.getAmount());
+                if (value == Long.MAX_VALUE || Long.MAX_VALUE - total < value) invalid = true;
+                else total += value;
+            }
         }
-        inv.setItem(45, ItemUtil.button(Material.PAPER, "§aCurrent Total", List.of("§f" + MoneyService.format(total), invalid ? "§cContains an unsupported item" : "§7Server recalculates on sale")));
-        inv.setItem(48, ItemUtil.button(Material.BARRIER, "§cClear", List.of("§7Return all sell-slot items")));
-        inv.setItem(49, ItemUtil.button(Material.EMERALD, "§aSELL", List.of("§7Sell total: §f" + MoneyService.format(total), "§7Click to complete transaction")));
-        inv.setItem(50, ItemUtil.button(Material.BOOK, "§eHow it works", List.of("§7Put items in the top slots.", "§7Shift-click from inventory works.", "§7Closing returns unsold items.")));
+        inv.setItem(45, ItemUtil.button(Material.GOLD_INGOT, "§e§lTOTAL", List.of(
+                "§7You will receive: §e§l" + MoneyService.format(total),
+                invalid ? "§cContains an unsupported item" : "§7All prices use WorthService"
+        )));
+        inv.setItem(48, ItemUtil.button(Material.BARRIER, "§6§lCLEAR", List.of("§7Return all sell-slot items")));
+        inv.setItem(49, ItemUtil.button(Material.ORANGE_DYE, "§6§l🔥 SELL ITEMS", List.of(
+                "§7Sell total: §e§l" + MoneyService.format(total),
+                "§eClick to complete the sale"
+        )));
+        inv.setItem(50, ItemUtil.button(Material.YELLOW_STAINED_GLASS_PANE, "§eHow it works",
+                List.of("§7Put items in the top slots.", "§7Shift-click from inventory works.", "§7Closing returns unsold items.")));
+        inv.setItem(46, ItemUtil.button(Material.ORANGE_STAINED_GLASS_PANE, "§6", List.of()));
+        inv.setItem(47, ItemUtil.button(Material.ORANGE_STAINED_GLASS_PANE, "§6", List.of()));
+        inv.setItem(51, ItemUtil.button(Material.ORANGE_STAINED_GLASS_PANE, "§6", List.of()));
+        inv.setItem(52, ItemUtil.button(Material.ORANGE_STAINED_GLASS_PANE, "§6", List.of()));
     }
 
-    private static final class SellHolder implements InventoryHolder { @Override public Inventory getInventory() { return null; } }
+    private static final class SellHolder implements InventoryHolder {
+        @Override public Inventory getInventory() { return null; }
+    }
 }
