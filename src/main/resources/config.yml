@@ -13,6 +13,18 @@ worth:
     sell: 250000
   DRAGON_EGG:
     sell: 2000000
+  BEACON:
+    sell: 400000
+  ANCIENT_DEBRIS:
+    sell: 15000
+  NETHERITE_SCRAP:
+    sell: 12000
+  NETHERITE_INGOT:
+    sell: 50000
+  NETHER_STAR:
+    sell: 25000
+  ELYTRA:
+    sell: 15000
   CHEST:
     sell: 25
   OAK_CHEST_BOAT:
@@ -40,3 +52,13 @@ worth:
 
 money:
   starting-balance: 0
+
+shardgainer:
+  blocks-per-roll: 64
+  reward-chance: 25.0
+  rewards:
+    1: 60
+    2: 20
+    3: 10
+    4: 7
+    5: 3
