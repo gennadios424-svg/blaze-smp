@@ -1,12 +1,12 @@
 name: BlazeSMP
-version: 1.0.0
+version: 1.1.0
 main: com.blazesmp.BlazeSMP
 api-version: '1.21'
 author: BlazeSMP
 commands:
   worth:
     description: View item sell values
-    usage: /worth [item|search]
+    usage: /worth [search]
   sell:
     description: Sell items for money
     usage: /sell
@@ -17,6 +17,18 @@ commands:
     description: Economy administration
     usage: /eco <give|take|set> <player> <amount>
     permission: blazesmp.eco
+  drill:
+    description: Give yourself a 3x3 Drill
+    usage: /drill
+    permission: blazesmp.drill
+  shardgainer:
+    description: Give yourself a Shardgainer
+    usage: /shardgainer
+    permission: blazesmp.shardgainer
 permissions:
   blazesmp.eco:
+    default: op
+  blazesmp.drill:
+    default: op
+  blazesmp.shardgainer:
     default: op
